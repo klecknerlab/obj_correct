@@ -40,76 +40,135 @@ class Surface:
         Xf, Nf, n = self._trace_rays(X, N, n, λ)
 
         if self.r_clip is not None:
-            r = mag(Xf[-1][..., :2] - self.center[..., :2])
-            bad = np.where(r > self.r_clip)
-            Nf[bad][..., 2] = -1
+            r = mag(Xf[0][..., :2] - self.center[:2])
+            print(r)
+            print(np.where(r > self.r_clip))
+            Nf[np.where(r > self.r_clip)] = -1
+
+            print(Nf)
 
         return Xf, Nf, n
 
     def _trace_rays(self, X, N, n, λ):
         nf = index.eval(self.n, λ)
         m = n/nf
-        print(n, nf, m)
+
         Xf = X.copy()
         Nf = N.copy()
 
-
-        # Planar surface
-        if self.R is None:
-            mask = N[..., 2] > 0
-            good = np.where(mask)
-
-            Ns = np.array([0, 0, -1]) * np.ones(N[good].shape)
-
-            d = (self.center[2:3] - X[good][..., 2:3]) / N[good][..., 2:3]
-            Xf[good] += d * N[good]
-
-
-        # Spherical surface
-        else:
-            # https://en.wikipedia.org/wiki/Line%E2%80%93sphere_intersection
-            # note: Δ = c - o
-            C = self.center + (0, 0, self.R)
-            Δ = C - Xf
-            dp = dot(Δ, N)
-            sqt = dp*dp - (dot(Δ, Δ) - self.R*self.R)
-
-            mask = (sqt >= 0) & (N[..., 2] > 0)
-            good = np.where(mask)
-
+        C = self.center
+        if self.R is not None:
+            C = C + (0, 0, self.R)
             sgn = np.sign(self.R)
-            # sgn > 0: convex surface: first intersection
-            # sgn < 0: concave surface: second intersection
-            sqt = np.sqrt(sqt[good][..., np.newaxis])
-            Xf[good] += (dp[good][..., np.newaxis] - sgn * sqt) * N[good]
-            Ns = sgn * norm(Xf[good] - C)
 
-            # Set "bad" rays
-            Nf[np.where(~mask)][..., 2] = -1
+        # Would it be faster to avoid a loop?  Probably, but with the bad
+        #  ray detection it's a real pain.  Could be accelerated easily with
+        #  numba if required.
+        for i, (XX, NN) in enumerate(zip(X, N)):
+            if NN[2] <= 0:
+                print(i)
+                continue
 
-        print(good)
-        print(Nf)
-        print(Ns)
-        # Compute refraction
-        # http://www.starkeffects.com/snells-law-vector.shtml
-        cp = cross(Nf[good], Ns)
-        sqt = 1 - m*m * dot(cp, cp)
+            if self.R is None:
+                Ns = np.array([0, 0, -1])
+                d = (C[2] - XX[2]) / NN[2]
+                Xf[i] += d * NN
+            else:
+                # https://en.wikipedia.org/wiki/Line%E2%80%93sphere_intersection
+                # note: Δ = c - o
+                Δ = C - XX
+                dp = dot(Δ, NN)
+                sqt = dp*dp - (dot(Δ, Δ) - self.R*self.R)
 
-        print(sqt)
+                if sqt < 0:
+                    Nf[i] = -1
+                    continue
 
-        # Check for total internal reflection, and kill the ray if we get it!
-        mask2 = sqt > 0
-        Nf[good][np.where(~mask2)][..., 2] = -1
+                # sgn > 0: convex surface: first intersection
+                # sgn < 0: concave surface: second intersection
+                Xf[i] += (dp - sgn * np.sqrt(sqt)) * NN
+                Ns = sgn * norm(Xf[i] - C)
 
-        good2 = np.where(mask2)
-        sqt = np.sqrt(sqt[good][good2][..., np.newaxis])
+            # Compute refraction
+            # http://www.starkeffects.com/snells-law-vector.shtml
+            cp = cross(NN, Ns)
+            sqt = 1 - m*m * dot(cp, cp)
 
-        print(mask2)
+            # Check for total internal reflection, and kill the ray if we get it!
+            if sqt < 0:
+                Nf[i] = -1
+                continue
 
-        Nf[good][good2] = norm(m * cross(Ns[good2], cp[good2]) - Ns[good2] * sqt)
+            Nf[i] = norm(m * cross(Ns, cp) - Ns * np.sqrt(sqt))
 
         # Output is ray intersection, normal right, index final
         return [Xf], Nf, nf
+
+    # OLD VERSION: vectorized with masks, but doesn't work!
+    # def _trace_rays(self, X, N, n, λ):
+    #     nf = index.eval(self.n, λ)
+    #     m = n/nf
+    #     print(n, nf, m)
+    #     Xf = X.copy()
+    #     Nf = N.copy()
+    #
+    #
+    #     # Planar surface
+    #     if self.R is None:
+    #         mask = N[..., 2] > 0
+    #         good = np.where(mask)
+    #
+    #         Ns = np.array([0, 0, -1]) * np.ones(N[good].shape)
+    #
+    #         d = (self.center[2:3] - X[good][..., 2:3]) / N[good][..., 2:3]
+    #         Xf[good] += d * N[good]
+    #
+    #
+    #     # Spherical surface
+    #     else:
+    #         # https://en.wikipedia.org/wiki/Line%E2%80%93sphere_intersection
+    #         # note: Δ = c - o
+    #         C = self.center + (0, 0, self.R)
+    #         Δ = C - Xf
+    #         dp = dot(Δ, N)
+    #         sqt = dp*dp - (dot(Δ, Δ) - self.R*self.R)
+    #
+    #         mask = (sqt >= 0) & (N[..., 2] > 0)
+    #         good = np.where(mask)
+    #
+    #         sgn = np.sign(self.R)
+    #         # sgn > 0: convex surface: first intersection
+    #         # sgn < 0: concave surface: second intersection
+    #         sqt = np.sqrt(sqt[good][..., np.newaxis])
+    #         Xf[good] += (dp[good][..., np.newaxis] - sgn * sqt) * N[good]
+    #         Ns = sgn * norm(Xf[good] - C)
+    #
+    #         # Set "bad" rays
+    #         Nf[np.where(~mask)][..., 2] = -1
+    #
+    #     print(good)
+    #     print(Nf)
+    #     print(Ns)
+    #     # Compute refraction
+    #     # http://www.starkeffects.com/snells-law-vector.shtml
+    #     cp = cross(Nf[good], Ns)
+    #     sqt = 1 - m*m * dot(cp, cp)
+    #
+    #     print(sqt)
+    #
+    #     # Check for total internal reflection, and kill the ray if we get it!
+    #     mask2 = sqt > 0
+    #     Nf[good][np.where(~mask2)][..., 2] = -1
+    #
+    #     good2 = np.where(mask2)
+    #     sqt = np.sqrt(sqt[good][good2][..., np.newaxis])
+    #
+    #     print(mask2)
+    #
+    #     Nf[good][good2] = norm(m * cross(Ns[good2], cp[good2]) - Ns[good2] * sqt)
+    #
+    #     # Output is ray intersection, normal right, index final
+    #     return [Xf], Nf, nf
 
     def edge(self, r_clip=12.5, force_clip=False, curve_points=100):
         if force_clip:
@@ -142,19 +201,28 @@ class PerfectLens(Surface):
         return PerfectLens(self.f, self.center + ensure_3D(offset), self.r_clip, self.optical_center)
 
     def _trace_rays(self, X, N, n=1, λ=DEFAULT_λ):
-        Nf = N / N[2:3]
+        # Would it be faster to avoid a loop?  Probably, but with the bad
+        #  ray detection it's a real pain.  Could be accelerated easily with
+        #  numba if required.
+        Xi = X.copy()
+        Xf = X.copy()
+        Nf = N / N[:, 2:3]
 
-        # Project to surface
-        Xi = X + (self.center[2:3] - X[..., 2:3]) * Nf
+        for i, (XX, NN) in enumerate(zip(X, N)):
+            if NN[2] <= 0:
+                continue
 
-        # Project to virtual lens center
-        Xf = X + (self.optical_center[2:3] - X[..., 2:3]) * Nf
+            # Project to surface
+            Xi[i] += (self.center[2] - XX[2]) * Nf[i]
 
-        # Focus
-        Nf[..., :2] -= (Xf[..., :2] - self.optical_center[:2]) / self.f
+            # Project to virtual lens center
+            Xf[i] += (self.optical_center[2] - XX[2]) * Nf[i]
 
-        # Propigate to clip plane
-        Xf += (self.center[2:3] - Xf[..., 2:3]) * Nf
+            # Focus
+            Nf[i, :2] -= (Xf[i, :2] - self.optical_center[:2]) / self.f
+
+            # Propigate to clip plane
+            Xf[i] += (self.center[2] - Xf[i, 2]) * Nf[i]
 
         return [Xi, Xf], norm(Nf), n
 

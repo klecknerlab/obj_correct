@@ -20,13 +20,15 @@ import matplotlib.pyplot as plt
 
 λ = 0.5
 glass = 'BK7'
-f = 50
+f = 100
 R = f * (index.eval(glass, λ) - 1)
+t = 1
+r_clip = 8
 
 stack1 = stack.OpticalStack([
-    surface.PerfectLens(50, 100)
+    surface.PerfectLens(f, 2*f, r_clip=r_clip)
 ])
-stack2 = stack.Element(glass, 10, R1=R, r_clip=5).offset(100)
+stack2 = stack.Element(glass, t, R1=R, r_clip=r_clip).offset(2*f)
 
 M, z = stack2.M()
 # print(stack2.M(z_final = 150))
@@ -34,20 +36,16 @@ print(f'f = {f:.2f}, R = {R:.2f}, n = {index.eval(glass, λ):.3f} @ {λ*1E3:.1f}
 print(f'focus @ z = {z:.2f}')
 
 X = np.zeros(3)
-m = np.linspace(-0.1, 0.1, 11)
+m = np.linspace(-0.05, 0.05, 21)
 N = np.zeros((len(m), 3))
 N[:, 0] = m
 N[:, 2] = 1
 
-trace = stack2.trace_rays(X, N, z)
-print(trace.shape)
-
-for ray in trace:
-    plt.plot(ray[:, 2], ray[:, 0], '.-', color='C0')
+for ray in stack1.trace_rays(X, N, z):
+    plt.plot(ray[:, 2], ray[:, 0], '-', linewidth=0.5, color='C0')
 
 
-# for ray in stack2.trace_rays(X, N, z):
-    # plt.plot(ray[:, 0], ray[:, 2], color='C1')
-# plt.gca().set_aspect(1)
+for ray in stack2.trace_rays(X, N, z):
+    plt.plot(ray[:, 2], ray[:, 0], '-', linewidth=0.5, color='C1')
 
 plt.show()

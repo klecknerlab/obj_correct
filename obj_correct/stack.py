@@ -62,7 +62,8 @@ class OpticalStack:
             trace += Xt
 
         X = trace[-1].copy()
-        X += (z_final - z) * N/N[..., 2:3]
+        good = np.where(N[..., 2] > 0)
+        X[good] += (z_final - z) * N[good]/N[good][..., 2:3]
 
         trace.append(X)
 
