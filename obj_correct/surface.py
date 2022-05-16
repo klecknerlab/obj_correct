@@ -41,11 +41,7 @@ class Surface:
 
         if self.r_clip is not None:
             r = mag(Xf[0][..., :2] - self.center[:2])
-            print(r)
-            print(np.where(r > self.r_clip))
             Nf[np.where(r > self.r_clip)] = -1
-
-            print(Nf)
 
         return Xf, Nf, n
 
@@ -66,7 +62,6 @@ class Surface:
         #  numba if required.
         for i, (XX, NN) in enumerate(zip(X, N)):
             if NN[2] <= 0:
-                print(i)
                 continue
 
             if self.R is None:
