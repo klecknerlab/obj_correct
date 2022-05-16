@@ -31,7 +31,6 @@ stack1 = stack.OpticalStack([
 stack2 = stack.Element(glass, t, R1=R, r_clip=r_clip).offset(2*f)
 
 M, z = stack2.M()
-# print(stack2.M(z_final = 150))
 print(f'f = {f:.2f}, R = {R:.2f}, n = {index.eval(glass, λ):.3f} @ {λ*1E3:.1f} nm')
 print(f'focus @ z = {z:.2f}')
 
