@@ -103,14 +103,14 @@ class OpticalStack:
         offset = ensure_3D(offset)
 
         if end is None:
-            end = self._get_end()
+            end = self.get_end()
 
         return OpticalStack([layer.flip(end=(offset+end))
             for layer in self.stack], self.n0)
 
-    def _get_end(self):
+    def get_end(self):
         if isinstance(self.stack[-1], OpticalStack):
-            return self.stack[-1]._get_end()
+            return self.stack[-1].get_end()
         elif isinstance(self.stack[-1], Surface):
             return self.stack[-1].center
         else:
