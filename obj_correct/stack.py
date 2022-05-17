@@ -69,9 +69,6 @@ class OpticalStack:
 
         return np.moveaxis(trace, 0, -2)
 
-
-
-
     def M(self, λ=DEFAULT_λ, z_final=None):
         n = index.eval(self.n0, λ)
         M = np.eye(2)
@@ -102,6 +99,22 @@ class OpticalStack:
         for layer in stack:
             pass
 
+    def flip(self, offset=0, end=None):
+        offset = ensure_3D(offset)
+
+        if end is None:
+            end = self._get_end()
+
+        return OpticalStack([layer.flip(end=(offset+end))
+            for layer in self.stack], self.n0)
+
+    def _get_end(self):
+        if isinstance(self.stack[-1], OpticalStack):
+            return self.stack[-1]._get_end()
+        elif isinstance(self.stack[-1], Surface):
+            return self.stack[-1].center
+        else:
+            raise ValueError(f'Invalid object in stack ({repr(self.stack[-1])})')
 
 
 class Element(OpticalStack):

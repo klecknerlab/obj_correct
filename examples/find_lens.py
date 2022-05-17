@@ -14,5 +14,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__all__ = ["index", "surface", "stack", "DEFAULT_λ", "stock"]
-DEFAULT_λ = 0.5
+from obj_correct import *
+
+lenses = stock.edmund_plano_convex.search(diameter=12)
+for lens in sorted(lenses, key=lambda l: lenses[l]['f']):
+    info = lenses[lens]
+    print(f"#{lens}: diameter={info['diameter']:.1f}, f={info['f']} R1={info['R1']}, t={info['t']}, glass={info['glass']}")
+
+lens = '18-057'
+optics = stock.edmund_plano_convex[lens]
+
+print(f'\nOptics stack of item #{lens}:')
+
+for layer in optics.stack:
+    print('   ' + repr(layer))
+
+
+print(f'\nOptics stack of item #{lens}, flipped and offset:')
+
+for layer in optics.flip(offset=1).stack:
+    print('   ' + repr(layer))

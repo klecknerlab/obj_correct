@@ -26,6 +26,16 @@ class Surface:
         self.r_clip = r_clip
         self.R = R if R != 0 else None
 
+    def __repr__(self):
+        s = f'Surface(n={repr(self.n)}, center={repr(self.center)}'
+
+        if self.r_clip is not None:
+            s += f', r_clip={repr(self.r_clip)}'
+        if self.R is not None:
+            s += f', R={repr(self.R)}'
+
+        return s + ')'
+
     def M(self, n1=1, λ=DEFAULT_λ):
         n2 = index.eval(self.n, λ)
         if self.R is None:
@@ -35,6 +45,9 @@ class Surface:
 
     def offset(self, offset):
         return Surface(self.n, self.center + ensure_3D(offset), self.r_clip, self.R)
+
+    def flip(self, end=np.zeros(3)):
+        return Surface(self.n, end - self.center, self.r_clip, None if self.R is None else -self.R)
 
     def trace_rays(self, X, N, n=1, λ=DEFAULT_λ):
         Xf, Nf, n = self._trace_rays(X, N, n, λ)
@@ -194,6 +207,9 @@ class PerfectLens(Surface):
 
     def offset(self, offset):
         return PerfectLens(self.f, self.center + ensure_3D(offset), self.r_clip, self.optical_center)
+
+    def flip(self, end=np.zeros(3)):
+        return PerfectLens(self.f, end - self.center, self.r_clip, end - self.optical_center)
 
     def _trace_rays(self, X, N, n=1, λ=DEFAULT_λ):
         # Would it be faster to avoid a loop?  Probably, but with the bad
