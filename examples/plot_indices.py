@@ -18,10 +18,10 @@ from obj_correct import index
 import numpy as np
 import matplotlib.pyplot as plt
 
-λ = np.linspace(0.2, 0.7, 100)
+λ = np.linspace(0.3, 0.7, 100)
 
-for name, model in index.INDEX_MODELS.items():
-    plt.plot(λ*1000, model(λ), label=name)
+for name in ['water', '7980', 'N-BK7', 'N-SF11', 'FS']:
+    plt.plot(λ*1000, index.eval(name, λ), label=name)
 
 plt.xlabel("Wavelength (nm)")
 plt.ylabel('Index of Refraction')

@@ -19,7 +19,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 λ = 0.5
-glass = 'BK7'
+glass = 'N-BK7'
 f = 100
 R = f * (index.eval(glass, λ) - 1)
 t = 1

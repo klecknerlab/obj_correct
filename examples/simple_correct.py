@@ -22,7 +22,7 @@ import matplotlib.pyplot as plt
 λ = 0.5
 NA = 0.4
 
-cover = stack.Element('BK7', 2).offset(1) # 2mm "cover glass", 1 mm from focus
+cover = stack.Element('N-BK7', 2).offset(1) # 2mm "cover glass", 1 mm from focus
 
 # Create the inital rays
 X = np.zeros(3)
@@ -53,12 +53,12 @@ for offset in (np.linspace(-0.2, 0.2, 11)):
     # Note that each lens has an approximate offset that I added in -- this is where the lens starts
     optics = stack.OpticalStack([
         cover,
-        stack.Element('BK7', 2.8, R2=-20.6).offset(3.5+offset) #Thorlabs LA1304, curved surface to the right
-        # stack.Element('BK7', 2.6, R2=-25.8).offset(4+offset) #Thorlabs LA1213, curved surface to the right
-        # stack.Element('BK7', 2.6, R1=25.8).offset(4.5+offset) #Thorlabs LA1213, curved surface to the left
-        # stack.Element('BK7', 2.2, R2=-51.5).offset(6+offset) #Thorlabs LA1207, curved surface to the right
-        # stack.Element('BK7', 2.0, R2=-37.21).offset(4.5+offset) #Edmund 67-148, curved surface to the right
-        # stack.Element('BK7', 2.0, R1=37.21).offset(5.5+offset) #Edmund 67-148, curved surface to the left
+        stack.Element('N-BK7', 2.8, R2=-20.6).offset(3.5+offset) #Thorlabs LA1304, curved surface to the right
+        # stack.Element('N-BK7', 2.6, R2=-25.8).offset(4+offset) #Thorlabs LA1213, curved surface to the right
+        # stack.Element('N-BK7', 2.6, R1=25.8).offset(4.5+offset) #Thorlabs LA1213, curved surface to the left
+        # stack.Element('N-BK7', 2.2, R2=-51.5).offset(6+offset) #Thorlabs LA1207, curved surface to the right
+        # stack.Element('N-BK7', 2.0, R2=-37.21).offset(4.5+offset) #Edmund 67-148, curved surface to the right
+        # stack.Element('N-BK7', 2.0, R1=37.21).offset(5.5+offset) #Edmund 67-148, curved surface to the left
     ])
 
     plt.plot(m, compute_offset_error(optics) * 1000, label=f'{offset:.2f}')
